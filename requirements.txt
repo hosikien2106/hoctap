@@ -1,5 +1,6 @@
 streamlit
 google-generativeai
+google-genai
 edge-tts
 python-dotenv
 numpy
@@ -8,3 +9,8 @@ plotly
 pandas
 feedparser
 requests
+pilot
+beautifulsoup4
+lxml
+pypdf
+gTTS
