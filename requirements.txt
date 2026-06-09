@@ -1,0 +1,10 @@
+streamlit
+google-generativeai
+edge-tts
+python-dotenv
+numpy
+scipy
+plotly
+pandas
+feedparser
+requests
