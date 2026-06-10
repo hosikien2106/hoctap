@@ -140,6 +140,21 @@ def scrape_automation_news():
     rss_urls = [
         "https://vnexpress.net/rss/tin-cong-nghe.rss",
         "https://tiasang.com.vn/rss",
+        "https://vnexpress.net/rss/khoa-hoc.rss",
+        "https://vnexpress.net/rss/so-hoa.rss",
+        "https://vnexpress.net/rss",
+        "https://vnexpress.net/rss/khoa-hoc-cong-nghe.rss",
+        "https://vnexpress.net/rss/tin-moi-nhat.rss",
+        "https://tuoitre.vn/rss/cong-nghe.rss",
+        "https://dantri.com.vn/rss/cong-nghe.rss",
+        "https://www.wired.com/feed/rss",
+        "https://spectrum.ieee.org/feed/rss",
+        "https://www.deepmind.com/blog/rss",
+        "https://openai.com/blog/rss/",        
+        "https://ai.googleblog.com/feeds/posts/default",
+        "https://techcrunch.com/feed/",
+        "https://feeds.arstechnica.com/arstechnica/index",
+        "https://www.technologyreview.com/feed/",
         "https://www.sciencedaily.com/rss/all.xml"
     ]
     keywords = ["tự động hóa", "automation", "robot", "scada", "plc", "ai", "iot", "điều khiển", "cảm biến", "cnc", "nhà máy"]
