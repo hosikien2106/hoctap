@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giả Lập Hệ Thống ĐO LƯỜNG</title>
+    <style>
+        :root {
+            --bench-bg: #2b2d31;
+            --panel-bg: #eae8e1;
+            --panel-border: #a8a69f;
+            --text-dark: #202020;
+            --wire-red: #d32f2f;
+            --wire-yellow: #fbc02d;
+            --wire-blue: #1976d2;
+            --wire-black: #212121;
+            --wire-green: #388e3c;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', sans-serif; 
+        }
+
+        body {
+            background-color: #1e1f22; color: #fff; padding: 12px;
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+        }
+
+        header {
+            background: #2b2d31; padding: 10px 20px; border-radius: 6px;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+            border-left: 6px solid #00adb5; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .header-info h1 { font-size: 18px; color: #00adb5; margin: 0; text-transform: uppercase; }
+        .header-info p { font-size: 11px; color: #9da5b4; margin-top: 2px; }
+
+        .controls { display: flex; gap: 12px; align-items: center; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .btn-clear { background-color: #e11d48; color: white; transition: 0.2s; }
+        .btn-clear:hover { background-color: #be123c; }
+        .power-btn { background-color: #4b5563; color: white; padding: 8px 18px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 8px; border: 2px solid #9ca3af; transition: 0.3s; }
+        .power-btn.on { background-color: #16a34a; border-color: #4ade80; box-shadow: 0 0 10px rgba(22,163,74,0.5); }
+
+        #exercise-panel {
+            background: #232428; padding: 10px 20px; border-radius: 6px; margin-bottom: 10px;
+            border: 1px solid #3f4147; display: flex; align-items: center; justify-content: space-between;
+        }
+        #exercise-select {
+            background: #1e1f22; color: #fff; border: 1px solid #555; padding: 8px 12px; 
+            border-radius: 4px; cursor: pointer; min-width: 300px; outline: none; font-weight: bold;
+        }
+        #circuit-status-badge {
+            padding: 8px 15px; border-radius: 4px; font-weight: bold; font-size: 13px;
+            background: #5c5e65; color: #fff; transition: background 0.3s;
+        }
+
+        #main-container { display: flex; flex: 1; gap: 12px; overflow: hidden; position: relative; }
+
+        #lab-bench {
+            flex: 1; background-color: var(--bench-bg); border: 3px solid #111; border-radius: 8px; padding: 12px;
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; overflow-y: auto; position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            user-select: none; -webkit-user-select: none;
+        }
+
+        #wire-cabinet {
+            width: 120px; background-color: #2b2d31; border-radius: 8px; border: 2px solid #3f4248; padding: 12px;
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+            user-select: none; -webkit-user-select: none; overflow-y: auto; max-height: 100%;
+        }
+        
+        #wire-cabinet::-webkit-scrollbar { width: 6px; }
+        #wire-cabinet::-webkit-scrollbar-track { background: #2b2d31; border-radius: 8px; }
+        #wire-cabinet::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+        
+        .wire-hanger { width: 100%; flex-shrink: 0; background: #202225; border-radius: 6px; padding: 10px 5px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 2px solid transparent; cursor: pointer; transition: 0.2s; }
+        .wire-hanger.active { border-color: #ffcc00; background: #35373c; transform: scale(1.05); }
+        .wire-line-preview { width: 6px; height: 50px; border-radius: 3px; position: relative; box-shadow: inset -1px 0 2px rgba(255,255,255,0.2); }
+        .wire-line-preview::before, .wire-line-preview::after { content: ''; position: absolute; width: 12px; height: 10px; background: #ffcc00; border-radius: 2px; left: -3px; }
+        .wire-line-preview::before { top: -6px; } .wire-line-preview::after { bottom: -6px; }
+        .wire-hanger span { font-size: 10px; font-weight: bold; margin-top: 4px; text-align: center; color:#ccc; }
+
+        /* PANEL HỘP CHAT ASSISTANT */
+        #ai-copilot-panel {
+            width: 330px; background-color: #2b2d31; border-radius: 8px; border: 2px solid #00adb5;
+            display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .ai-header { background: #1e1f22; padding: 12px; font-weight: bold; color: #00adb5; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #00adb5; display: flex; justify-content: space-between; align-items: center; }
+        .ai-body { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #232428; }
+        .ai-body::-webkit-scrollbar { width: 4px; }
+        .ai-body::-webkit-scrollbar-thumb { background: #00adb5; border-radius: 2px; }
+        
+        .msg { padding: 8px 12px; border-radius: 6px; font-size: 12px; line-height: 1.5; max-width: 90%; word-break: break-word; white-space: pre-line; }
+        .msg.bot { background: #2f3136; color: #eaeaea; border-left: 3px solid #00adb5; align-self: flex-start; }
+        .msg.user { background: #00adb5; color: #fff; align-self: flex-end; }
+        
+        .ai-footer { padding: 10px; background: #1e1f22; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #3f4147; }
+        .ai-input-row { display: flex; gap: 6px; }
+        .ai-input { flex: 1; background: #2f3136; border: 1px solid #555; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; outline: none; }
+        .ai-btn { background: #00adb5; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; transition: 0.2s; }
+        .ai-btn:hover { background: #008c9e; }
+        .ai-btn.secondary { background: #4b5563; }
+        .ai-btn.secondary:hover { background: #374151; }
+        .api-key-input { background: #111; border: 1px dashed #00adb5; color: #00ffcc; font-size: 10px; padding: 6px; width: 100%; border-radius: 4px; text-align: center; outline: none; }
+
+        #wire-layer { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1000; }
+        #wire-layer path { pointer-events: auto; cursor: pointer; transition: all 0.2s; opacity: 0.35; }
+        #wire-layer path:hover { opacity: 1; stroke-width: 6px !important; filter: drop-shadow(0 0 5px rgba(255,255,255,0.8)); }
+        #wire-layer path.active-wire { opacity: 1; stroke-width: 6px !important; filter: drop-shadow(0 0 8px rgba(255,255,255,1)); z-index: 1001; }
+
+        .terminal-highlight { box-shadow: 0 0 15px 5px #00ffcc !important; border-color: #00ffcc !important; transform: scale(1.4); z-index: 100 !important; }
+
+        .module { background-color: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 6px; color: var(--text-dark); padding: 8px; box-shadow: 3px 3px 8px rgba(0,0,0,0.5), inset 1px 1px 2px #fff; position: relative; }
+        .mod-title { text-align: center; font-size: 11px; font-weight: bold; color: #111; border-bottom: 2px solid #a8a69f; padding-bottom: 3px; margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .grid-9 { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, auto); gap: 6px; }
+
+        .digital-meter-box { background: #1e2022; border: 3px solid #343a40; border-radius: 4px; padding: 6px; text-align: center; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); margin-bottom: 6px; }
+        .digital-display { background: #000; color: #330000; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; padding: 4px 6px; border-radius: 3px; text-align: right; border: 1px solid #444; letter-spacing: 1px; transition: all 0.3s; }
+        .digital-display.on { color: #00ffcc; text-shadow: 0 0 6px rgba(0, 255, 210, 0.6); }
+        .digital-display.on.ammeter { color: #ff9f43; text-shadow: 0 0 6px rgba(255, 159, 67, 0.6); }
+        .meter-name { font-size: 11px; font-weight: 800; color: #333; margin-top: 3px; display: block; text-align: center; }
+
+        .terminal-container { display: flex; flex-direction: column; align-items: center; margin: 2px 0; }
+        .terminal-title { font-size: 10px; font-weight: bold; margin-bottom: 2px; }
+        .terminal { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #333; cursor: crosshair; position: relative; z-index: 10; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6); transition: 0.1s; }
+        .terminal:hover { transform: scale(1.2); border-color: #000; }
+        .terminal::after { content: ''; position: absolute; width: 4px; height: 4px; background-color: #000; border-radius: 50%; top: 4px; left: 4px; }
+        
+        .c-red { background-color: var(--wire-red); } .c-yellow { background-color: var(--wire-yellow); } .c-blue { background-color: var(--wire-blue); } .c-black { background-color: var(--wire-black); } .c-green { background-color: var(--wire-green); }
+
+        .comp-card { border: 1px dashed #b5b3a9; border-radius: 4px; padding: 4px; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.02); }
+        .comp-card.vert { flex-direction: column; justify-content: center; text-align: center; }
+        .comp-card.horiz { flex-direction: row; }
+        .comp-info { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .comp-symbol { font-size: 12px; font-weight: bold; color: #495057; line-height: 1; }
+        .comp-name { font-size: 9px; font-weight: 800; color: #000; }
+        .comp-value { font-size: 9px; font-weight: bold; color: #d32f2f; }
+
+        .mcb-container { display: flex; background: #ddd; padding: 4px; border-radius: 4px; cursor: pointer; border: 2px solid #aaa; }
+        .mcb-pole { width: 14px; height: 28px; background: #eee; margin: 0 1px; position: relative; border: 1px solid #999; border-radius: 2px; }
+        .mcb-switch-bar { width: 100%; height: 14px; background: #e57373; position: absolute; bottom: 0; transition: bottom 0.2s; border-radius: 2px; }
+        .mcb-container.on .mcb-switch-bar { bottom: 14px; background: #d32f2f; }
+        
+        .estop { width: 32px; height: 32px; background: radial-gradient(circle, #ff5252, #c62828); border-radius: 50%; border: 2px solid #d50000; position: relative; cursor: pointer; }
+        .estop::after { content: '↻'; color: white; font-size: 16px; position: absolute; top: 5px; left: 8px; font-weight: bold; }
+        
+        .ind-light { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #555; background: #444; position: relative; margin: 0 auto; transition: 0.3s; }
+        .ind-light.on.bg-red { background: radial-gradient(circle, #ff8a80, #d32f2f); box-shadow: 0 0 10px red; }
+        .ind-light.on.bg-yellow { background: radial-gradient(circle, #ffff8d, #fbc02d); box-shadow: 0 0 10px yellow; }
+        .ind-light.on.bg-green { background: radial-gradient(circle, #b9f6ca, #388e3c); box-shadow: 0 0 10px lime; }
+
+        .digital-screen { background: #000; color: #440000; font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold; padding: 4px 8px; text-align: right; border: 2px solid #333; border-radius: 3px; width: 60px; transition: color 0.3s; }
+        .digital-screen.on { color: #ff3333; text-shadow: 0 0 5px #ff0000; }
+        
+        .dc-rocker { width: 12px; height: 20px; background: #b71c1c; border: 2px solid #444; border-radius: 2px; cursor: pointer; transition: 0.3s; }
+        .dc-rocker.on { background: #ff5252; }
+        
+        .knob { width: 26px; height: 26px; border-radius: 50%; background: conic-gradient(from 180deg, #ccc, #eee, #ccc); border: 1px solid #888; position: relative; margin: 5px auto; transform: rotate(-135deg); transition: 0.3s; }
+        .knob::after { content: ''; position: absolute; width: 2px; height: 10px; background: #333; top: 2px; left: 11px; }
+        .knob-marks { position: absolute; width: 40px; height: 40px; border-radius: 50%; border-top: 3px dashed #666; border-left: 3px dashed #666; top: -8px; left: -8px; transform: rotate(-45deg); }
+
+        /* Bổ sung các class vòng tròn đen (cầu chì) bị thiếu từ b.html */
+        .fuse-holder { width: 14px; height: 14px; background: #111; border-radius: 50%; border: 2px solid #444; margin: 5px auto 0; }
+        .fuse-knob { position: absolute; left: -10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; background: #111; border-radius: 50%; border: 2px solid #555; display: flex; align-items: center; justify-content: center; }
+        .fuse-text { color:#888; font-size:4px; font-weight:bold; transform:rotate(-45deg); }
+
+        #mod-dc-meters { grid-column: 1; grid-row: 1; }
+        #mod-ac-meters { grid-column: 2 / span 2; grid-row: 1; }
+        #mod-cap-load { grid-column: 1; grid-row: 2; }
+        #mod-res-load { grid-column: 2; grid-row: 2; }
+        #mod-ind-load { grid-column: 3; grid-row: 2; }
+        #mod-transformer { grid-column: 1; grid-row: 3; }
+        #mod-3phase-source { grid-column: 2; grid-row: 3; }
+        #mod-dc-source { grid-column: 3; grid-row: 3; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-info">
+            <h1>Giả Lập Hệ Thống ĐO LƯỜNG MẠCH ĐIỆN</h1>
+            
+        </div>
+        <div class="controls">
+            <button class="btn btn-clear" id="clear-all-wires">RÚT TOÀN BỘ DÂY</button>
+            <div class="power-btn" id="master-power-btn"><span id="power-led">🔴</span> CHƯA BẬT CB</div>
+        </div>
+    </header>
+
+    <div id="exercise-panel">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <h3 style="color: #fbc02d; font-size: 14px; margin: 0; text-transform: uppercase;">Phòng:</h3>
+            <select id="exercise-select">
+                <option value="ex1_dc_parallel">Đo Lường Mạch Điện</option>
+            </select>
+        </div>
+        <div id="circuit-status-badge">🔌 Đang chờ nối mạch...</div>
+    </div>
+
+
+    <div id="main-container">
+        <!-- KHỐI THỰC HÀNH BẢN GỌN DÂY GIỮ NGUYÊN -->
+        <div id="lab-bench">
+            <svg id="wire-layer"><path id="drag-wire" d="" stroke="#d32f2f" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="4,4"/></svg>
+
+            <div class="module" id="mod-dc-meters">
+                <div class="mod-title">DC DIGITAL METERS</div>
+                <div class="grid-3" style="margin-bottom: 8px;">
+                    <div><div class="digital-meter-box"><div class="digital-display" id="disp-dcv1">00.0</div></div><span class="meter-name">V1 (-)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-red" id="dcv1_p"></div><div class="terminal c-black" id="dcv1_n"></div></div></div>
+                    <div><div class="digital-meter-box"><div class="digital-display" id="disp-dcv2">00.0</div></div><span class="meter-name">V2 (-)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-red" id="dcv2_p"></div><div class="terminal c-black" id="dcv2_n"></div></div></div>
+                    <div><div class="digital-meter-box"><div class="digital-display" id="disp-dcv3">00.0</div></div><span class="meter-name">V3 (-)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-red" id="dcv3_p"></div><div class="terminal c-black" id="dcv3_n"></div></div></div>
+                </div>
+                <div class="grid-3">
+                    <div><div class="digital-meter-box"><div class="digital-display ammeter" id="disp-dca1">.000</div></div><span class="meter-name">A1 (-)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-red" id="dca1_in"></div><div class="terminal c-black" id="dca1_out"></div></div></div>
+                    <div><div class="digital-meter-box"><div class="digital-display ammeter" id="disp-dca2">.000</div></div><span class="meter-name">A2 (-)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-red" id="dca2_in"></div><div class="terminal c-black" id="dca2_out"></div></div></div>
+                    <div><div class="digital-meter-box"><div class="digital-display ammeter" id="disp-dca3">.000</div></div><span class="meter-name">A3 (-)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-red" id="dca3_in"></div><div class="terminal c-black" id="dca3_out"></div></div></div>
+                </div>
+            </div>
+
+            <div class="module" id="mod-ac-meters">
+                <div class="mod-title">AC DIGITAL METERS</div>
+                <div class="grid-3" style="margin-bottom: 8px;">
+                    <div><div class="digital-meter-box"><div class="digital-display" id="disp-acv1">000.0</div></div><span class="meter-name">V1 (~)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-red" id="acv1_p"></div><div class="terminal c-black" id="acv1_n"></div></div></div>
+                    <div><div class="digital-meter-box"><div class="digital-display" id="disp-acv2">000.0</div></div><span class="meter-name">V2 (~)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-yellow" id="acv2_p"></div><div class="terminal c-black" id="acv2_n"></div></div></div>
+                    <div><div class="digital-meter-box"><div class="digital-display" id="disp-acv3">000.0</div></div><span class="meter-name">V3 (~)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-blue" id="acv3_p"></div><div class="terminal c-black" id="acv3_n"></div></div></div>
+                </div>
+                <div class="grid-3">
+                    <div><div class="digital-meter-box"><div class="digital-display ammeter" id="disp-aca1">.000</div></div><span class="meter-name">A1 (~)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-red" id="aca1_in"></div><div class="terminal c-black" id="aca1_out"></div></div></div>
+                    <div><div class="digital-meter-box"><div class="digital-display ammeter" id="disp-aca2">.000</div></div><span class="meter-name">A2 (~)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-yellow" id="aca2_in"></div><div class="terminal c-black" id="aca2_out"></div></div></div>
+                    <div><div class="digital-meter-box"><div class="digital-display ammeter" id="disp-aca3">.000</div></div><span class="meter-name">A3 (~)</span><div style="display:flex; justify-content:center; gap:6px; margin-top:4px;"><div class="terminal c-blue" id="aca3_in"></div><div class="terminal c-black" id="aca3_out"></div></div></div>
+                </div>
+            </div>
+
+            <div class="module" id="mod-cap-load">
+                <div class="mod-title">POWER CAPACITOR LOAD</div>
+                <div class="grid-9">
+                    <div class="comp-card horiz"><div class="terminal c-red" id="c1_in"></div><div class="comp-info"><span class="comp-name">C1</span><span class="comp-symbol">-||-</span><span class="comp-value">40µF</span></div><div class="terminal c-black" id="c1_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-red" id="c2_in"></div><div class="comp-info"><span class="comp-name">C2</span><span class="comp-symbol">-||-</span><span class="comp-value">40µF</span></div><div class="terminal c-black" id="c2_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-red" id="c3_in"></div><div class="comp-info"><span class="comp-name">C3</span><span class="comp-symbol">-||-</span><span class="comp-value">40µF</span></div><div class="terminal c-black" id="c3_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-yellow" id="c4_in"></div><div class="comp-info"><span class="comp-name">C4</span><span class="comp-symbol">-||-</span><span class="comp-value">70µF</span></div><div class="terminal c-black" id="c4_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-yellow" id="c5_in"></div><div class="comp-info"><span class="comp-name">C5</span><span class="comp-symbol">-||-</span><span class="comp-value">70µF</span></div><div class="terminal c-black" id="c5_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-yellow" id="c6_in"></div><div class="comp-info"><span class="comp-name">C6</span><span class="comp-symbol">-||-</span><span class="comp-value">70µF</span></div><div class="terminal c-black" id="c6_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-blue" id="c7_in"></div><div class="comp-info"><span class="comp-name">C7</span><span class="comp-symbol">-||-</span><span class="comp-value">100µF</span></div><div class="terminal c-black" id="c7_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-blue" id="c8_in"></div><div class="comp-info"><span class="comp-name">C8</span><span class="comp-symbol">-||-</span><span class="comp-value">100µF</span></div><div class="terminal c-black" id="c8_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-blue" id="c9_in"></div><div class="comp-info"><span class="comp-name">C9</span><span class="comp-symbol">-||-</span><span class="comp-value">100µF</span></div><div class="terminal c-black" id="c9_out"></div></div>
+                </div>
+            </div>
+
+            <div class="module" id="mod-res-load">
+                <div class="mod-title">POWER RESISTOR LOAD</div>
+                <div class="grid-9">
+                    <div class="comp-card vert"><div class="terminal c-red" id="r1_in"></div><div class="comp-info"><span class="comp-name">R1</span><span class="comp-symbol">_/\_</span><span class="comp-value">50Ω</span></div><div class="terminal c-black" id="r1_out"></div></div>
+                    <div class="comp-card vert"><div class="terminal c-red" id="r2_in"></div><div class="comp-info"><span class="comp-name">R2</span><span class="comp-symbol">_/\_</span><span class="comp-value">50Ω</span></div><div class="terminal c-black" id="r2_out"></div></div>
+                    <div class="comp-card vert"><div class="terminal c-red" id="r3_in"></div><div class="comp-info"><span class="comp-name">R3</span><span class="comp-symbol">_/\_</span><span class="comp-value">50Ω</span></div><div class="terminal c-black" id="r3_out"></div></div>
+                    <div class="comp-card vert"><div class="terminal c-yellow" id="r4_in"></div><div class="comp-info"><span class="comp-name">R4</span><span class="comp-symbol">_/\_</span><span class="comp-value">65Ω</span></div><div class="terminal c-black" id="r4_out"></div></div>
+                    <div class="comp-card vert"><div class="terminal c-yellow" id="r5_in"></div><div class="comp-info"><span class="comp-name">R5</span><span class="comp-symbol">_/\_</span><span class="comp-value">65Ω</span></div><div class="terminal c-black" id="r5_out"></div></div>
+                    <div class="comp-card vert"><div class="terminal c-yellow" id="r6_in"></div><div class="comp-info"><span class="comp-name">R6</span><span class="comp-symbol">_/\_</span><span class="comp-value">65Ω</span></div><div class="terminal c-black" id="r6_out"></div></div>
+                    <div class="comp-card vert"><div class="terminal c-blue" id="r7_in"></div><div class="comp-info"><span class="comp-name">R7</span><span class="comp-symbol">_/\_</span><span class="comp-value">100Ω</span></div><div class="terminal c-black" id="r7_out"></div></div>
+                    <div class="comp-card vert"><div class="terminal c-blue" id="r8_in"></div><div class="comp-info"><span class="comp-name">R8</span><span class="comp-symbol">_/\_</span><span class="comp-value">100Ω</span></div><div class="terminal c-black" id="r8_out"></div></div>
+                    <div class="comp-card vert"><div class="terminal c-blue" id="r9_in"></div><div class="comp-info"><span class="comp-name">R9</span><span class="comp-symbol">_/\_</span><span class="comp-value">100Ω</span></div><div class="terminal c-black" id="r9_out"></div></div>
+                </div>
+            </div>
+
+            <div class="module" id="mod-ind-load">
+                <div class="mod-title">POWER INDUCTOR LOAD</div>
+                <div class="grid-9">
+                    <div class="comp-card horiz"><div class="terminal c-red" id="l1_in"></div><div class="comp-info"><span class="comp-name">L1</span><span class="comp-symbol">⋈⋈</span><span class="comp-value">20mH</span></div><div class="terminal c-black" id="l1_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-red" id="l2_in"></div><div class="comp-info"><span class="comp-name">L2</span><span class="comp-symbol">⋈⋈</span><span class="comp-value">20mH</span></div><div class="terminal c-black" id="l2_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-red" id="l3_in"></div><div class="comp-info"><span class="comp-name">L3</span><span class="comp-symbol">⋈⋈</span><span class="comp-value">20mH</span></div><div class="terminal c-black" id="l3_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-yellow" id="l4_in"></div><div class="comp-info"><span class="comp-name">L4</span><span class="comp-symbol">⋈⋈</span><span class="comp-value">45mH</span></div><div class="terminal c-black" id="l4_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-yellow" id="l5_in"></div><div class="comp-info"><span class="comp-name">L5</span><span class="comp-symbol">⋈⋈</span><span class="comp-value">45mH</span></div><div class="terminal c-black" id="l5_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-yellow" id="l6_in"></div><div class="comp-info"><span class="comp-name">L6</span><span class="comp-symbol">⋈⋈</span><span class="comp-value">45mH</span></div><div class="terminal c-black" id="l6_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-blue" id="l7_in"></div><div class="comp-info"><span class="comp-name">L7</span><span class="comp-symbol">⋈⋈</span><span class="comp-value">60mH</span></div><div class="terminal c-black" id="l7_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-blue" id="l8_in"></div><div class="comp-info"><span class="comp-name">L8</span><span class="comp-symbol">⋈⋈</span><span class="comp-value">60mH</span></div><div class="terminal c-black" id="l8_out"></div></div>
+                    <div class="comp-card horiz"><div class="terminal c-blue" id="l9_in"></div><div class="comp-info"><span class="comp-name">L9</span><span class="comp-symbol">⋈⋈</span><span class="comp-value">60mH</span></div><div class="terminal c-black" id="l9_out"></div></div>
+                </div>
+            </div>
+
+            <div class="module" id="mod-transformer">
+                <div class="mod-title">3-PHASE TRANSFORMER</div>
+                <div style="display: flex; justify-content: space-around; padding-top: 5px; align-items: center; height: 100%;">
+                    <div style="display: flex; flex-direction: column; align-items: center; width: 30%; position: relative;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; padding: 0 5px;">
+                            <div class="terminal-container"><span class="terminal-title">A</span><div class="terminal c-red" id="tr_p_A"></div></div>
+                            <div class="terminal-container"><span class="terminal-title">X</span><div class="terminal c-red" id="tr_p_X"></div></div>
+                        </div>
+                        <div style="position: relative; width: 100%; display: flex; justify-content: center; margin: 5px 0;">
+                            <div class="fuse-knob"><span class="fuse-text">FUSE</span></div>
+                            <svg width="60" height="40" viewBox="0 0 80 40">
+                                <path d="M 0 8 L 20 8 Q 24 2 28 8 Q 32 2 36 8 Q 40 2 44 8 Q 48 2 52 8 Q 56 2 60 8 L 80 8" fill="none" stroke="#333" stroke-width="2"/>
+                                <line x1="20" y1="18" x2="60" y2="18" stroke="#333" stroke-width="2"/>
+                                <line x1="20" y1="22" x2="60" y2="22" stroke="#333" stroke-width="2"/>
+                                <path d="M 0 32 L 20 32 Q 24 38 28 32 Q 32 38 36 32 Q 40 38 44 32 Q 48 38 52 32 Q 56 38 60 32 L 80 32" fill="none" stroke="#333" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; width: 100%; padding: 0 5px;">
+                            <div class="terminal-container"><div class="terminal c-red" id="tr_s_a"></div><span class="terminal-title">a</span></div>
+                            <div class="terminal-container"><div class="terminal c-red" id="tr_s_x"></div><span class="terminal-title">x</span></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; width: 30%; position: relative;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; padding: 0 5px;">
+                            <div class="terminal-container"><span class="terminal-title">B</span><div class="terminal c-yellow" id="tr_p_B"></div></div>
+                            <div class="terminal-container"><span class="terminal-title">Y</span><div class="terminal c-yellow" id="tr_p_Y"></div></div>
+                        </div>
+                        <div style="position: relative; width: 100%; display: flex; justify-content: center; margin: 5px 0;">
+                            <div class="fuse-knob"><span class="fuse-text">FUSE</span></div>
+                            <svg width="60" height="40" viewBox="0 0 80 40">
+                                <path d="M 0 8 L 20 8 Q 24 2 28 8 Q 32 2 36 8 Q 40 2 44 8 Q 48 2 52 8 Q 56 2 60 8 L 80 8" fill="none" stroke="#333" stroke-width="2"/>
+                                <line x1="20" y1="18" x2="60" y2="18" stroke="#333" stroke-width="2"/>
+                                <line x1="20" y1="22" x2="60" y2="22" stroke="#333" stroke-width="2"/>
+                                <path d="M 0 32 L 20 32 Q 24 38 28 32 Q 32 38 36 32 Q 40 38 44 32 Q 48 38 52 32 Q 56 38 60 32 L 80 32" fill="none" stroke="#333" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; width: 100%; padding: 0 5px;">
+                            <div class="terminal-container"><div class="terminal c-yellow" id="tr_s_b"></div><span class="terminal-title">b</span></div>
+                            <div class="terminal-container"><div class="terminal c-yellow" id="tr_s_y"></div><span class="terminal-title">y</span></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; width: 30%; position: relative;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; padding: 0 5px;">
+                            <div class="terminal-container"><span class="terminal-title">C</span><div class="terminal c-blue" id="tr_p_C"></div></div>
+                            <div class="terminal-container"><span class="terminal-title">Z</span><div class="terminal c-blue" id="tr_p_Z"></div></div>
+                        </div>
+                        <div style="position: relative; width: 100%; display: flex; justify-content: center; margin: 5px 0;">
+                            <div class="fuse-knob"><span class="fuse-text">FUSE</span></div>
+                            <svg width="60" height="40" viewBox="0 0 80 40">
+                                <path d="M 0 8 L 20 8 Q 24 2 28 8 Q 32 2 36 8 Q 40 2 44 8 Q 48 2 52 8 Q 56 2 60 8 L 80 8" fill="none" stroke="#333" stroke-width="2"/>
+                                <line x1="20" y1="18" x2="60" y2="18" stroke="#333" stroke-width="2"/>
+                                <line x1="20" y1="22" x2="60" y2="22" stroke="#333" stroke-width="2"/>
+                                <path d="M 0 32 L 20 32 Q 24 38 28 32 Q 32 38 36 32 Q 40 38 44 32 Q 48 38 52 32 Q 56 38 60 32 L 80 32" fill="none" stroke="#333" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; width: 100%; padding: 0 5px;">
+                            <div class="terminal-container"><div class="terminal c-blue" id="tr_s_c"></div><span class="terminal-title">c</span></div>
+                            <div class="terminal-container"><div class="terminal c-blue" id="tr_s_z"></div><span class="terminal-title">z</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="module" id="mod-3phase-source">
+                <div class="mod-title">THREE - PHASE POWER SUPPLY EDC-2202</div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 5px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                        <span style="font-size: 8px; font-weight: bold;">3 PHASE 380VAC/50Hz</span>
+                        <div class="mcb-container" id="mcb-switch">
+                            <div class="mcb-pole"><div class="mcb-switch-bar"></div></div>
+                            <div class="mcb-pole"><div class="mcb-switch-bar"></div></div>
+                            <div class="mcb-pole"><div class="mcb-switch-bar"></div></div>
+                            <div class="mcb-pole"><div class="mcb-switch-bar"></div></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                        <span style="font-size: 10px; font-weight: bold;">E-STOP</span>
+                        <div class="estop"></div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <div style="display: flex; gap: 10px;">
+                            <div style="text-align:center;"><div class="ind-light bg-red" id="light-l1"></div><div class="fuse-holder"></div></div>
+                            <div style="text-align:center;"><div class="ind-light bg-yellow" id="light-l2"></div><div class="fuse-holder"></div></div>
+                            <div style="text-align:center;"><div class="ind-light bg-green" id="light-l3"></div><div class="fuse-holder"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 15px; margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                    <div class="terminal-container"><span class="terminal-title">L1</span><div class="terminal c-red" id="src_ac_l1"></div></div>
+                    <div class="terminal-container"><span class="terminal-title">L2</span><div class="terminal c-yellow" id="src_ac_l2"></div></div>
+                    <div class="terminal-container"><span class="terminal-title">L3</span><div class="terminal c-blue" id="src_ac_l3"></div></div>
+                    <div class="terminal-container"><span class="terminal-title">N</span><div class="terminal c-black" id="src_ac_n"></div></div>
+                    <div class="terminal-container"><span class="terminal-title">PE</span><div class="terminal c-green" id="src_ac_pe"></div></div>
+                </div>
+            </div>
+
+            <div class="module" id="mod-dc-source">
+                <div class="mod-title">DC VOLTAGE SOURCE</div>
+                <div style="display: flex; justify-content: space-around; padding-top: 5px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; width: 45%; border-right: 1px dashed #ccc; padding-right: 5px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <div class="dc-rocker" id="dc-sw-1"></div>
+                            <div class="digital-screen" id="dc-screen-1">00.0</div>
+                        </div>
+                        <span style="font-size:10px; font-weight:bold; margin-bottom: 5px;">V1</span>
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: flex-end;">
+                            <div style="position: relative; width: 40px; height: 40px;">
+                                <div class="knob-marks"></div><div class="knob" id="dc-knob-1"></div>
+                            </div>
+                            <div style="display: flex; gap: 5px; border-top: 1px solid #666; padding: 5px 2px 0 2px;">
+                                <div class="terminal-container"><div class="terminal c-red" id="src_dc1_p"></div><span class="terminal-title">+</span></div>
+                                <div class="terminal-container"><div class="terminal c-black" id="src_dc1_n"></div><span class="terminal-title">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <div class="dc-rocker" id="dc-sw-2"></div>
+                            <div class="digital-screen" id="dc-screen-2">00.0</div>
+                        </div>
+                        <span style="font-size:10px; font-weight:bold; margin-bottom: 5px;">V2</span>
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: flex-end;">
+                            <div style="position: relative; width: 40px; height: 40px;">
+                                <div class="knob-marks"></div><div class="knob" id="dc-knob-2"></div>
+                            </div>
+                            <div style="display: flex; gap: 5px; border-top: 1px solid #666; padding: 5px 2px 0 2px;">
+                                <div class="terminal-container"><div class="terminal c-red" id="src_dc2_p"></div><span class="terminal-title">+</span></div>
+                                <div class="terminal-container"><div class="terminal c-black" id="src_dc2_n"></div><span class="terminal-title">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="wire-cabinet">
+            <div style="font-size: 11px; font-weight: bold; color: #ffcc00; text-align: center;">KHO DÂY</div>
+            <div class="wire-hanger active" data-color="#d32f2f"><div class="wire-line-preview" style="background-color: var(--wire-red);"></div><span>Dây Đỏ</span></div>
+            <div class="wire-hanger" data-color="#fbc02d"><div class="wire-line-preview" style="background-color: var(--wire-yellow);"></div><span>Dây Vàng</span></div>
+            <div class="wire-hanger" data-color="#1976d2"><div class="wire-line-preview" style="background-color: var(--wire-blue);"></div><span>Dây Xanh</span></div>
+            <div class="wire-hanger" data-color="#212121"><div class="wire-line-preview" style="background-color: var(--wire-black);"></div><span>Dây Đen</span></div>
+            <div class="wire-hanger" data-color="#388e3c"><div class="wire-line-preview" style="background-color: var(--wire-green);"></div><span>Dây Lục (PE)</span></div>
+        </div>
+
+        <!-- BOX PANEL AI CHAT ASSISTANT -->
+        <div id="ai-copilot-panel">
+            <div class="ai-header">
+                <span> Trợ Lý Ảo 🤖</span>
+                <span style="font-size: 9px; color:#00ffcc;">Đang Hoạt Động</span>
+            </div>
+            <div class="ai-body" id="ai-chat-box">
+                <div class="msg bot">Mình Đã Sẵn Sàng Chỉ Chờ Bạn Thôi</div>
+            </div>
+            <div class="ai-footer">
+                <!-- NHÚNG TỰ ĐỘNG KEY DỰ ÁN MỚI CỦA KIÊN VÀO GIÁ TRỊ MẶC ĐỊNH -->
+                <input type="password" class="api-key-input" id="api-key" value="AQ.Ab8RN6KLsDQHzD91envUpDgcOJicz9HZ06Or_7eIPbDZ6-ACAg" placeholder="🔐 Nhập Gemini API Key tại đây...">
+                <div class="ai-input-row">
+                    <button class="ai-btn" id="ai-diagnose-btn">🔍 CHẨN ĐOÁN LỖI</button>
+                    <button class="ai-btn secondary" id="upload-trigger-btn">🖼️ TẢI SƠ ĐỒ MẠCH</button>
+                    <input type="file" id="ai-image-input" accept="image/*" style="display: none;">
+                </div>
+                <div class="ai-input-row">
+                    <input type="text" class="ai-input" id="ai-user-text" placeholder="Hỏi Trợ Lý Ảo...">
+                    <button class="ai-btn" id="ai-send-btn">GỬI</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const labBench = document.getElementById('lab-bench');
+        const wireLayer = document.getElementById('wire-layer');
+        const dragWire = document.getElementById('drag-wire');
+        
+        let isPowerOn = false;
+        let wires = [];
+
+        const masterBtn = document.getElementById('master-power-btn');
+        const mcbSwitch = document.getElementById('mcb-switch');
+        const indLights = document.querySelectorAll('.ind-light');
+        const dcSw1 = document.getElementById('dc-sw-1'); const dcSw2 = document.getElementById('dc-sw-2');
+        const dcScreen1 = document.getElementById('dc-screen-1'); const dcScreen2 = document.getElementById('dc-screen-2');
+        const dcKnob1 = document.getElementById('dc-knob-1'); const dcKnob2 = document.getElementById('dc-knob-2');
+
+        function syncWireLayerSize() {
+            wireLayer.style.width = labBench.scrollWidth + 'px';
+            wireLayer.style.height = labBench.scrollHeight + 'px';
+        }
+        
+        const resizeObserver = new ResizeObserver(() => { syncWireLayerSize(); });
+        resizeObserver.observe(labBench);
+        labBench.addEventListener('scroll', syncWireLayerSize);
+        window.addEventListener('resize', syncWireLayerSize);
+        window.addEventListener('load', syncWireLayerSize);
+
+        document.getElementById('exercise-select').addEventListener('change', (e) => { solveCircuitLogic(); });
+
+        function solveLinearSystem(A, b) {
+            let n = b.length;
+            let x = new Array(n).fill(0);
+            let M = Array(n).fill(0).map((_, i) => [...A[i], b[i]]);
+
+            for (let i = 0; i < n; i++) {
+                let maxRow = i;
+                for (let k = i + 1; k < n; k++) {
+                    if (Math.abs(M[k][i]) > Math.abs(M[maxRow][i])) maxRow = k;
+                }
+                let tmp = M[i]; M[i] = M[maxRow]; M[maxRow] = tmp;
+
+                if (Math.abs(M[i][i]) < 1e-12) continue; 
+
+                for (let k = i + 1; k < n; k++) {
+                    let c = -M[k][i] / M[i][i];
+                    for (let j = i; j <= n; j++) {
+                        if (i === j) M[k][j] = 0;
+                        else M[k][j] += c * M[i][j];
+                    }
+                }
+            }
+
+            for (let i = n - 1; i >= 0; i--) {
+                if (Math.abs(M[i][i]) < 1e-12) { x[i] = 0; continue; }
+                x[i] = M[i][n] / M[i][i];
+                for (let k = i - 1; k >= 0; k--) M[k][n] -= M[k][i] * x[i];
+            }
+            return x;
+        }
+
+        function analyzeCircuitMNA() {
+            let terminalToSuperNode = {};
+            let superNodes = [];
+            let adjWire = {};
+            
+            wires.forEach(w => {
+                if(!adjWire[w.from]) adjWire[w.from] = [];
+                if(!adjWire[w.to]) adjWire[w.to] = [];
+                adjWire[w.from].push(w.to);
+                adjWire[w.to].push(w.from);
+            });
+            
+            let visitedWire = new Set();
+            Object.keys(adjWire).forEach(node => {
+                if (!visitedWire.has(node)) {
+                    let currentSet = new Set();
+                    let queue = [node];
+                    visitedWire.add(node);
+                    while(queue.length > 0) {
+                        let curr = queue.shift();
+                        currentSet.add(curr);
+                        terminalToSuperNode[curr] = superNodes.length;
+                        (adjWire[curr] || []).forEach(neighbor => {
+                            if (!visitedWire.has(neighbor)) { visitedWire.add(neighbor); queue.push(neighbor); }
+                        });
+                    }
+                    superNodes.push(currentSet);
+                }
+            });
+
+            let components = [
+                { u: 'r1_in', v: 'r1_out', R: 50 }, { u: 'r2_in', v: 'r2_out', R: 50 }, { u: 'r3_in', v: 'r3_out', R: 50 },
+                { u: 'r4_in', v: 'r4_out', R: 65 }, { u: 'r5_in', v: 'r5_out', R: 65 }, { u: 'r6_in', v: 'r6_out', R: 65 },
+                { u: 'r7_in', v: 'r7_out', R: 100 }, { u: 'r8_in', v: 'r8_out', R: 100 }, { u: 'r9_in', v: 'r9_out', R: 100 },
+                
+                { u: 'l1_in', v: 'l1_out', R: 1 }, { u: 'l2_in', v: 'l2_out', R: 1 }, { u: 'l3_in', v: 'l3_out', R: 1 },
+                { u: 'c1_in', v: 'c1_out', R: 1e8 }, { u: 'c2_in', v: 'c2_out', R: 1e8 }, { u: 'c3_in', v: 'c3_out', R: 1e8 },
+                
+                { u: 'dca1_in', v: 'dca1_out', R: 0.01, type: 'dca1' },
+                { u: 'dca2_in', v: 'dca2_out', R: 0.01, type: 'dca2' },
+                { u: 'dca3_in', v: 'dca3_out', R: 0.01, type: 'dca3' },
+                
+                { u: 'dcv1_p', v: 'dcv1_n', R: 1e7, type: 'dcv1' },
+                { u: 'dcv2_p', v: 'dcv2_n', R: 1e7, type: 'dcv2' },
+                { u: 'dcv3_p', v: 'dcv3_n', R: 1e7, type: 'dcv3' },
+                
+                { u: 'aca1_in', v: 'aca1_out', R: 0.01, type: 'aca1' },
+                { u: 'aca2_in', v: 'aca2_out', R: 0.01, type: 'aca2' },
+                { u: 'aca3_in', v: 'aca3_out', R: 0.01, type: 'aca3' },
+                
+                { u: 'acv1_p', v: 'acv1_n', R: 1e7, type: 'acv1' },
+                { u: 'acv2_p', v: 'acv2_n', R: 1e7, type: 'acv2' },
+                { u: 'acv3_p', v: 'acv3_n', R: 1e7, type: 'acv3' }
+            ];
+
+            let voltage_sources = [];
+            if (isPowerOn) {
+                voltage_sources.push({p: 'src_dc1_p', n: 'src_dc1_n', v: 24.0});
+                voltage_sources.push({p: 'src_dc2_p', n: 'src_dc2_n', v: 12.0});
+                voltage_sources.push({p: 'src_ac_l1', n: 'src_ac_n', v: 24.0});
+                voltage_sources.push({p: 'src_ac_l2', n: 'src_ac_n', v: 24.0});
+                voltage_sources.push({p: 'src_ac_l3', n: 'src_ac_n', v: 24.0});
+            }
+
+            let terminals = [];
+            voltage_sources.forEach(src => { terminals.push(src.p); terminals.push(src.n); });
+            components.forEach(c => { terminals.push(c.u); terminals.push(c.v); });
+
+            terminals.forEach(t => {
+                if(terminalToSuperNode[t] === undefined) {
+                    terminalToSuperNode[t] = superNodes.length;
+                    superNodes.push(new Set([t]));
+                }
+            });
+
+            let N = superNodes.length;
+            let M = voltage_sources.length;
+            let A = Array(N + M).fill(0).map(() => Array(N + M).fill(0));
+            let b = Array(N + M).fill(0);
+
+            for (let i = 0; i < N; i++) A[i][i] += 1e-9; 
+
+            components.forEach(c => {
+                let nu = terminalToSuperNode[c.u];
+                let nv = terminalToSuperNode[c.v];
+                let g = 1.0 / c.R;
+                A[nu][nu] += g; A[nv][nv] += g;
+                A[nu][nv] -= g; A[nv][nu] -= g;
+            });
+
+            let status = "OPEN";
+            
+            for (let k = 0; k < M; k++) {
+                let src = voltage_sources[k];
+                let np = terminalToSuperNode[src.p];
+                let nn = terminalToSuperNode[src.n];
+                
+                if (np === nn) {
+                    status = "SHORT";
+                    A[N+k][N+k] = 1; b[N+k] = 0;
+                } else {
+                    A[np][N+k] += 1; A[nn][N+k] -= 1;
+                    A[N+k][np] += 1; A[N+k][nn] -= 1;
+                    b[N+k] = src.v;
+                }
+            }
+
+            for(let j = 0; j < N + M; j++) A[0][j] = 0;
+            A[0][0] = 1; b[0] = 0;
+
+            let x = solveLinearSystem(A, b);
+
+            let results = {
+                status: status,
+                meters: { dcv1: 0, dcv2: 0, dcv3: 0, acv1: 0, acv2: 0, acv3: 0, dca1: 0, dca2: 0, dca3: 0, aca1: 0, aca2: 0, aca3: 0 }
+            };
+
+            if (status !== "SHORT") {
+                components.forEach(c => {
+                    if (c.type) {
+                        let Vu = x[terminalToSuperNode[c.u]];
+                        let Vv = x[terminalToSuperNode[c.v]];
+                        if (c.type.startsWith('dca') || c.type.startsWith('aca')) results.meters[c.type] = (Vu - Vv) / c.R;
+                        else if (c.type.startsWith('dcv') || c.type.startsWith('acv')) results.meters[c.type] = (Vu - Vv);
+                    }
+                });
+
+                if (M > 0) {
+                    let totalI = 0;
+                    for (let k = 0; k < M; k++) totalI += Math.abs(x[N+k]);
+                    if (totalI > 0.001) status = "CLOSED";
+                }
+                results.status = status;
+            }
+            return results;
+        }
+
+        function solveCircuitLogic() {
+            const badge = document.getElementById('circuit-status-badge');
+
+            if (!isPowerOn) {
+                document.querySelectorAll('.digital-display').forEach(disp => {
+                    disp.classList.remove('on');
+                    if(disp.classList.contains('ammeter')) disp.innerText = '.000';
+                    else disp.innerText = '00.0';
+                });
+                
+                if (dcScreen1) { dcScreen1.classList.remove('on'); dcScreen1.innerText = '00.0'; }
+                if (dcScreen2) { dcScreen2.classList.remove('on'); dcScreen2.innerText = '00.0'; }
+
+                badge.style.background = "#5c5e65"; 
+                badge.innerHTML = "🔌 Hệ thống đang tắt. Dây nối vẫn được giữ, hãy bật CB để cấp điện lại.";
+                return;
+            }
+
+            document.querySelectorAll('.digital-display').forEach(disp => disp.classList.add('on'));
+
+            let result = analyzeCircuitMNA();
+
+            ['dcv1', 'dcv2', 'dcv3', 'acv1', 'acv2', 'acv3'].forEach(id => {
+                if (!document.getElementById('disp-' + id)) return;
+                let val = result.meters[id];
+                let str = Math.abs(val).toFixed(1);
+                if (str.length === 3) str = '0' + str; 
+                let sign = (val <= -0.05) ? '-' : '';
+                if (id.startsWith('ac')) sign = '';
+                document.getElementById('disp-' + id).innerText = sign + str;
+            });
+
+            ['dca1', 'dca2', 'dca3', 'aca1', 'aca2', 'aca3'].forEach(id => {
+                if (!document.getElementById('disp-' + id)) return;
+                let val = result.meters[id];
+                let str = Math.abs(val).toFixed(3);
+                if (str.startsWith('0.')) str = str.substring(1); 
+                let sign = (val <= -0.0005 && str !== '.000') ? '-' : '';
+                if (id.startsWith('ac')) sign = '';
+                document.getElementById('disp-' + id).innerText = sign + str;
+            });
+
+            if (result.status === "SHORT") {
+                badge.style.background = "#d32f2f"; 
+                badge.innerHTML = "🔥 CẢNH BÁO: CHẬP MẠCH (Ngắn mạch nguồn)!";
+                document.getElementById('dc-screen-1').innerText = '00.0'; 
+                document.getElementById('dc-screen-2').innerText = '00.0'; 
+            } 
+            else if (result.status === "CLOSED") {
+                badge.style.background = "#388e3c"; 
+                badge.innerHTML = "✅ MẠCH KÍN: Dòng điện đang chạy qua tải.";
+                document.getElementById('dc-screen-1').innerText = '24.0';
+                document.getElementById('dc-screen-2').innerText = '12.0';
+            } 
+            else {
+                badge.style.background = "#fbc02d"; 
+                badge.innerHTML = "⚠️ HỞ MẠCH: Nguồn đã cấp điện, nhưng mạch chưa nối kín.";
+                document.getElementById('dc-screen-1').innerText = '24.0';
+                document.getElementById('dc-screen-2').innerText = '12.0';
+            }
+        }
+
+        function updateSystemState() {
+            mcbSwitch.classList.toggle('on', isPowerOn);
+            masterBtn.classList.toggle('on', isPowerOn);
+            
+            masterBtn.innerHTML = isPowerOn 
+                ? '<span id="power-led">🟢</span> CÓ ĐIỆN LƯỚI' 
+                : '<span id="power-led">🔴</span> CHƯA BẬT CB';
+
+            indLights.forEach(light => light.classList.toggle('on', isPowerOn));
+            
+            if (isPowerOn) { 
+                dcScreen1.classList.add('on'); dcScreen1.innerText = '24.0'; dcKnob1.style.transform = 'rotate(45deg)'; 
+                dcScreen2.classList.add('on'); dcScreen2.innerText = '12.0'; dcKnob2.style.transform = 'rotate(-20deg)'; 
+                dcSw1.classList.add('on'); dcSw2.classList.add('on');
+            } else { 
+                dcScreen1.classList.remove('on'); dcScreen1.innerText = '00.0'; dcKnob1.style.transform = 'rotate(-135deg)'; 
+                dcScreen2.classList.remove('on'); dcScreen2.innerText = '00.0'; dcKnob2.style.transform = 'rotate(-135deg)'; 
+                dcSw1.classList.remove('on'); dcSw2.classList.remove('on');
+            }
+
+            solveCircuitLogic();
+        }
+
+        mcbSwitch.addEventListener('click', () => { 
+            isPowerOn = !isPowerOn; 
+            updateSystemState(); 
+        });
+        
+        masterBtn.addEventListener('click', () => { 
+            isPowerOn = !isPowerOn; 
+            updateSystemState(); 
+        });
+
+        // ==========================================
+        // CƠ CHẾ ĐI DÂY NỐI THÔNG MINH
+        // ==========================================
+        let selectedColor = '#d32f2f'; let isDrawing = false; let startTerminal = null;
+
+        document.querySelectorAll('.wire-hanger').forEach(hanger => {
+            hanger.addEventListener('click', (e) => {
+                document.querySelector('.wire-hanger.active').classList.remove('active');
+                e.currentTarget.classList.add('active');
+                selectedColor = e.currentTarget.getAttribute('data-color');
+                dragWire.setAttribute('stroke', selectedColor);
+            });
+        });
+
+        function getTerminalCenter(el) {
+            const rect = el.getBoundingClientRect(); const benchRect = labBench.getBoundingClientRect();
+            return { x: rect.left - benchRect.left + rect.width / 2 + labBench.scrollLeft, y: rect.top - benchRect.top + rect.height / 2 + labBench.scrollTop };
+        }
+
+        function calculateCubicPath(startX, startY, endX, endY) {
+            const dx = Math.abs(endX - startX); 
+            const dy = Math.abs(endY - startY);
+
+            if (dx > 40) {
+                const sag = Math.max(startY, endY) + Math.min(60, dx * 0.15 + 15);
+                return `M ${startX} ${startY} C ${startX} ${sag}, ${endX} ${sag}, ${endX} ${endY}`;
+            } else {
+                const curveOffset = Math.min(45, dy * 0.25 + 10); 
+                const sign = (startY < endY) ? 1 : -1; 
+                
+                const cp1Y = startY + (endY - startY) * 0.2;
+                const cp2Y = endY - (endY - startY) * 0.2;
+                
+                return `M ${startX} ${startY} C ${startX + curveOffset * sign} ${cp1Y}, ${endX + curveOffset * sign} ${cp2Y}, ${endX} ${endY}`;
+            }
+        }
+
+        document.querySelectorAll('.terminal').forEach(terminal => {
+            terminal.addEventListener('mousedown', (e) => {
+                isDrawing = true; startTerminal = e.currentTarget;
+                const pos = getTerminalCenter(startTerminal);
+                dragWire.setAttribute('d', calculateCubicPath(pos.x, pos.y, pos.x, pos.y));
+                e.stopPropagation(); e.preventDefault(); 
+            });
+
+            terminal.addEventListener('mouseup', (e) => {
+                if (isDrawing && startTerminal && startTerminal !== e.currentTarget) {
+                    const endTerminal = e.currentTarget; const wireId = 'wire_' + Date.now();
+                    const startPos = getTerminalCenter(startTerminal); const endPos = getTerminalCenter(endTerminal);
+                    wires.push({ id: wireId, from: startTerminal.id, to: endTerminal.id });
+                    
+                    const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    pathEl.setAttribute('id', wireId); 
+                    pathEl.setAttribute('d', calculateCubicPath(startPos.x, startPos.y, endPos.x, endPos.y));
+                    pathEl.setAttribute('stroke', selectedColor); 
+                    pathEl.setAttribute('stroke-width', '4'); 
+                    pathEl.setAttribute('fill', 'none');
+                    pathEl.setAttribute('stroke-linecap', 'round');
+                    pathEl.setAttribute('data-from', startTerminal.id);
+                    pathEl.setAttribute('data-to', endTerminal.id);
+
+                    pathEl.addEventListener('mouseenter', () => {
+                        const fromId = pathEl.getAttribute('data-from');
+                        const toId = pathEl.getAttribute('data-to');
+                        if (document.getElementById(fromId)) document.getElementById(fromId).classList.add('terminal-highlight');
+                        if (document.getElementById(toId)) document.getElementById(toId).classList.add('terminal-highlight');
+                    });
+
+                    pathEl.addEventListener('mouseleave', () => {
+                        if (!pathEl.classList.contains('active-wire')) {
+                            const fromId = pathEl.getAttribute('data-from');
+                            const toId = pathEl.getAttribute('data-to');
+                            if (document.getElementById(fromId)) document.getElementById(fromId).classList.remove('terminal-highlight');
+                            if (document.getElementById(toId)) document.getElementById(toId).classList.remove('terminal-highlight');
+                        }
+                    });
+
+                    pathEl.addEventListener('click', (evt) => {
+                        document.querySelectorAll('.active-wire').forEach(p => p.classList.remove('active-wire'));
+                        document.querySelectorAll('.terminal-highlight').forEach(t => t.classList.remove('terminal-highlight'));
+                        pathEl.classList.add('active-wire');
+                        if (document.getElementById(startTerminal.id)) document.getElementById(startTerminal.id).classList.add('terminal-highlight');
+                        if (document.getElementById(endTerminal.id)) document.getElementById(endTerminal.id).classList.add('terminal-highlight');
+                        evt.stopPropagation(); 
+                    });
+
+                    pathEl.addEventListener('dblclick', (evt) => { 
+                        wires = wires.filter(w => w.id !== wireId); 
+                        pathEl.remove(); 
+                        document.querySelectorAll('.terminal-highlight').forEach(t => t.classList.remove('terminal-highlight'));
+                        solveCircuitLogic(); 
+                        evt.stopPropagation(); 
+                    });
+                    
+                    wireLayer.appendChild(pathEl);
+                    solveCircuitLogic();
+                    syncWireLayerSize(); 
+                }
+                isDrawing = false; startTerminal = null; dragWire.setAttribute('d', '');
+            });
+        });
+
+        labBench.addEventListener('mousemove', (e) => {
+            if (!isDrawing || !startTerminal) return;
+            const startPos = getTerminalCenter(startTerminal); const benchRect = labBench.getBoundingClientRect();
+            const mouseX = e.clientX - benchRect.left + labBench.scrollLeft; const mouseY = e.clientY - benchRect.top + labBench.scrollTop;
+            dragWire.setAttribute('d', calculateCubicPath(startPos.x, startPos.y, mouseX, mouseY));
+        });
+
+        window.addEventListener('mouseup', () => { if (isDrawing) { isDrawing = false; startTerminal = null; dragWire.setAttribute('d', ''); } });
+        
+        window.addEventListener('click', () => {
+            document.querySelectorAll('.active-wire').forEach(p => p.classList.remove('active-wire'));
+            document.querySelectorAll('.terminal-highlight').forEach(t => t.classList.remove('terminal-highlight'));
+        });
+
+        document.getElementById('clear-all-wires').addEventListener('click', () => { 
+            wires.forEach(w => { const el = document.getElementById(w.id); if (el) el.remove(); }); 
+            wires = []; 
+            document.querySelectorAll('.terminal-highlight').forEach(t => t.classList.remove('terminal-highlight'));
+            solveCircuitLogic(); 
+            syncWireLayerSize();
+        });
+
+        // =========================================================================
+        // KHU VỰC KẾT NỐI API CLOUD GEMINI 2.5 FLASH ORIGINAL CHUẨN ĐÉT
+        // =========================================================================
+        const chatBox = document.getElementById('ai-chat-box');
+        const userTextInput = document.getElementById('ai-user-text');
+        const sendBtn = document.getElementById('ai-send-btn');
+        const diagnoseBtn = document.getElementById('ai-diagnose-btn');
+        const uploadTriggerBtn = document.getElementById('upload-trigger-btn');
+        const imageInput = document.getElementById('ai-image-input');
+
+        function appendMessage(sender, text) {
+            const msgEl = document.createElement('div');
+            msgEl.className = `msg ${sender}`;
+            
+            // Bộ lọc loại bỏ hoàn toàn các ký tự Markdown rác (** hoặc * hoặc #)
+            let cleanText = text
+                .replace(/\*\frac.*?\*\*/g, '')
+                .replace(/\*\*(.*?)\*\*/g, '$1')
+                .replace(/\*(.*?)\*/g, '$1')
+                .replace(/__(.*?)__/g, '$1')
+                .replace(/#(.*?)\n/g, '$1\n')
+                .replace(/#/g, '');
+            
+            msgEl.innerText = cleanText;
+            chatBox.appendChild(msgEl);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function callGeminiAI(contentsPayload) {
+            const apiKey = document.getElementById('api-key').value.trim();
+            if(!apiKey) {
+                alert("Kiên ơi! Ông cần điền Gemini API Key (Mã bắt đầu bằng AIzaSy...) vào ô màu xanh phía dưới hộp chat nhé!");
+                return null;
+            }
+            
+            // GIỮ NGUYÊN BẢN CHUẨN ĐÉT HỆ THỐNG MỚI GEMINI-2.5-FLASH CỦA ÔNG
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: contentsPayload })
+                });
+                
+                const data = await response.json();
+                if(data.error) {
+                    if(data.error.message.includes("API key not valid")) {
+                        return `❌ Lỗi bảo mật: API Key ông điền bị sai định dạng. Hãy chắc chắn sao chép mã bắt đầu bằng "AIzaSy..." trên Google AI Studio nhé!`;
+                    }
+                    return `❌ Lỗi hệ thống Cloud: ${data.error.message}`;
+                }
+                return data.candidates[0].content.parts[0].text;
+            } catch (err) {
+                return `❌ Thất bại khi kết nối API: ${err.message}`;
+            }
+        }
+
+        // CHẨN ĐOÁN LỖI MẠCH
+        diagnoseBtn.addEventListener('click', async () => {
+            appendMessage('user', "🔍 Yêu cầu Gemini AI chẩn đoán mạch hiện tại.");
+            
+            let currentWiresText = wires.map((w, idx) => `- Dây thứ ${idx+1}: Nối chốt '${w.from}' với chốt '${w.to}'`).join('\n') || "Hiện tại sinh viên chưa nối bất kỳ sợi dây nào.";
+            let mnaResult = analyzeCircuitMNA();
+
+            appendMessage('bot', "🤖 AI đang phân tích dữ liệu Kirchhoff và gửi lên Google Cloud...");
+
+            const systemContext = `Bạn là một hệ thống AI Lab Assistant thông minh hướng dẫn sinh viên tên là Kiên.
+Dữ liệu trạm ảo gồm các ID lỗ cắm:
+- Nguồn DC1 24V: 'src_dc1_p' (+), 'src_dc1_n' (-)
+- Điện trở tải R1-R9: 'r1_in', 'r1_out',...
+- Các bộ đồng hồ đo: 'dca1_in', 'dca1_out' (Ampe), 'dcv1_p', 'dcv1_n' (Vôn).
+
+Yêu cầu nghiêm ngặt: Tuyệt đối KHÔNG viết bất kỳ ký tự định dạng như **, *, # trong câu trả lời. Hãy viết văn bản thuần túy, tóm gọn nhất có thể, chỉ rõ mạch đang hở ở chốt cụ thể nào và hướng dẫn cách khắc phục nhanh.`;
+
+            const userPrompt = `Dữ liệu mạch hiện tại:
+Trạng thái điện tổng trạm: ${isPowerOn ? "ĐANG BẬT" : "ĐANG TẮT"}.
+Kết quả ma trận: ${mnaResult.status} (OPEN = Hở mạch, SHORT = Ngắn mạch, CLOSED = Mạch kín chạy tốt).
+Dây nối Kiên đang cắm:
+${currentWiresText}`;
+
+            const contents = [{
+                role: "user",
+                parts: [{ text: `${systemContext}\n\n${userPrompt}` }]
+            }];
+
+            let aiResponse = await callGeminiAI(contents);
+            if (aiResponse) appendMessage('bot', aiResponse);
+        });
+
+        // VISION AI: QUÉT ẢNH SƠ ĐỒ MẠCH
+        uploadTriggerBtn.addEventListener('click', () => imageInput.click());
+        
+        imageInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const dataUrl = e.target.result;
+                const base64Data = dataUrl.split(",")[1];
+                const mimeType = file.type;
+
+                appendMessage('user', `📸 Đã tải lên ảnh sơ đồ mạch điện thực tế.`);
+                appendMessage('bot', "🤖 Đang gửi dữ liệu hình ảnh lên Gemini Cloud Vision để bóc tách sơ đồ...");
+
+                const instructions = `Bạn là Trợ lý AI thực hành mạch điện. Hãy đọc tấm ảnh sơ đồ mạch điện được gửi và trả lời thật ngắn gọn văn bản thuần túy, tuyệt đối không dùng ký tự đặc biệt như **, *, #.
+
+Yêu cầu định dạng câu trả lời bắt buộc chỉ gồm đúng 2 phần:
+1. Mạch gồm các linh kiện: (Liệt kê ngắn gọn tên các linh kiện nhận diện được)
+2. Cách mắc mạch: (Hướng dẫn ngắn gọn từng bước cắm dây nối từ chốt nào qua chốt nào sử dụng chính xác các ID chốt cắm dưới đây)
+
+Các ID hệ thống ảo:
+- Bộ nguồn DC1: 'src_dc1_p' (+), 'src_dc1_n' (-)
+- Khối tải Resistor: 'r1_in', 'r1_out',...
+- Ampe kế số đo dòng: 'dca1_in', 'dca1_out' (Mắc nối tiếp).
+- Vôn kế số đo áp: 'dcv1_p', 'dcv1_n' (Mắc song song).`;
+
+                const contents = [{
+                    role: "user",
+                    parts: [
+                        { text: instructions },
+                        {
+                            inlineData: {
+                                mimeType: mimeType,
+                                data: base64Data
+                            }
+                        }
+                    ]
+                }];
+
+                let aiResponse = await callGeminiAI(contents);
+                if (aiResponse) appendMessage('bot', aiResponse);
+            };
+            reader.readAsDataURL(file);
+
+            this.value = ''; 
+        });
+
+        // Chat text
+        sendBtn.addEventListener('click', async () => {
+            let txt = userTextInput.value.trim();
+            if(!txt) return;
+            appendMessage('user', txt);
+            userTextInput.value = "";
+
+            appendMessage('bot', "🤖 Gemini đang xử lý câu hỏi...");
+            
+            const contents = [{
+                role: "user",
+                parts: [{ text: `Bạn là trợ lý AI thông minh tại trạm thí nghiệm mạch điện. Hãy trả lời câu hỏi sau của sinh viên Kiên thật ngắn gọn, văn bản thuần túy và không dùng dấu ** hay #: ${txt}` }]
+            }];
+
+            let aiResponse = await callGeminiAI(contents);
+            if (aiResponse) appendMessage('bot', aiResponse);
+        });
+
+        userTextInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendBtn.click(); });
+    </script>
+</body>
+</html>
