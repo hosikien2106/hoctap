@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from google import genai
 from dotenv import load_dotenv
 from database import add_pending_news
+from urllib.parse import urljoin  # Thư viện chuẩn hóa URL tuyệt đối
 
 # Tải cấu hình bảo mật từ file .env
 load_dotenv()
@@ -104,7 +105,6 @@ def generate_content(topic, level, attached_image=None):
     if attached_image:
         contents.append(attached_image)
 
-    # Nâng cấp lên 5 lần thử lại, thời gian chờ bắt đầu từ 3 giây -> 6s -> 12s...
     max_retries = 5 
     delay = 3
     
@@ -117,7 +117,7 @@ def generate_content(topic, level, attached_image=None):
             if "503" in error_msg or "UNAVAILABLE" in error_msg or "429" in error_msg:
                 if attempt < max_retries - 1:
                     time.sleep(delay)
-                    delay *= 2  # Tăng gấp đôi thời gian chờ cho lần thử sau
+                    delay *= 2
                     continue
             return f"⚠️ **Hệ thống Google Gemini hiện đang quá tải do nhu cầu cao (Lỗi 503).**\n\nHệ thống của chúng ta đã thử kết nối lại {max_retries} lần nhưng chưa thành công. Vui lòng đợi khoảng 1-2 phút và nhấn nút 'Bắt đầu biên soạn' một lần nữa nhé!"
 
@@ -136,7 +136,7 @@ def text_to_speech(text):
         return None
 
 def scrape_automation_news():
-    """Hàm cào dữ liệu nâng cao sử dụng Thuật toán Chấm điểm Mật độ Từ khóa (Keyword Scoring)"""
+    """Hàm cào dữ liệu thông minh ứng dụng Thuật toán Chấm điểm Mật độ Từ khóa và Trích xuất Ảnh đa tầng"""
     rss_urls = [
         "https://vnexpress.net/rss/khoa-hoc.rss",
         "https://vnexpress.net/rss/so-hoa.rss",
@@ -159,8 +159,12 @@ def scrape_automation_news():
         "https://vietnamnet.vn/rss/khoa-hoc.rss"
     ]
     keywords = ["tự động hóa","automation","control","robot","cnc","iot","điều khiển","trí tuệ nhân tạo","artificial intelligence","chip","semiconductor","bán dẫn"]
+
     count = 0
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    # Giả lập Header Trình duyệt PC tiêu chuẩn để tránh bị Cloudflare kiểm soát luồng Cloud IP
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
     
     for url in rss_urls:
         try:
@@ -172,35 +176,58 @@ def scrape_automation_news():
                 title = entry.get('title', '')
                 link = entry.get('link', '')
                 pub_date = entry.get('published', entry.get('pubDate', ''))
-                summary_raw = entry.get('summary', '')
                 
-                # Làm sạch HTML để đếm từ chính xác trong phần Tóm tắt
+                # 🌟 SỬA LỖI ĐỒNG BỘ CLOUD: Lấy từ cả summary và description để tránh mất mát dữ liệu cấu trúc
+                summary_raw = entry.get('summary', '') or entry.get('description', '')
+                
                 summary_text = ""
                 soup = None
                 if summary_raw:
-                    soup = BeautifulSoup(summary_raw, "lxml")
+                    # Sử dụng html.parser chuẩn làm fallback an toàn trên môi trường Linux Cloud
+                    soup = BeautifulSoup(summary_raw, "html.parser")
                     summary_text = soup.get_text()
 
-                # -------------------------------------------------------------
-                # 🔥 THUẬT TOÁN TÍNH ĐIỂM (KEYWORD SCORING / DENSITY)
-                # -------------------------------------------------------------
+                # --- THUẬT TOÁN TÍNH ĐIỂM TỪ KHÓA ---
                 title_lower = title.lower()
                 summary_lower = summary_text.lower()
                 score = 0
                 
                 for kw in keywords:
-                    # Trọng số: Từ khóa ở Tiêu đề x2 điểm, ở Tóm tắt x1 điểm
                     score += title_lower.count(kw) * 2
                     score += summary_lower.count(kw) * 1
                 
-                # YÊU CẦU ĐẦU VÀO: Phải đạt tối thiểu 2 điểm mới được chọn làm tin tức chuyên ngành
-                # (Đạt được khi: Có 1 từ khóa ở Tiêu đề, HOẶC 2 từ khóa ở Tóm tắt)
+                # Đạt tiêu chuẩn mật độ tri thức kỹ thuật
                 if score >= 2:
                     image_url = "https://via.placeholder.com/300x180"
-                    if soup:
+                    
+                    # -----------------------------------------------------------------
+                    # 🌟 THUẬT TOÁN KIỂM TRA ẢNH ĐA TẦNG (ANTI-BUG FOR CLOUD ENVIRONMENT)
+                    # -----------------------------------------------------------------
+                    # TẦNG 1: Trích xuất từ các cấu trúc thẻ Media chuẩn RSS Quốc tế (Dành cho ScienceDaily...)
+                    if 'media_thumbnail' in entry and entry.media_thumbnail:
+                        image_url = entry.media_thumbnail[0].get('url', image_url)
+                    elif 'media_content' in entry and entry.media_content:
+                        image_url = entry.media_content[0].get('url', image_url)
+                    elif 'enclosures' in entry and entry.enclosures:
+                        for enc in entry.enclosures:
+                            if enc.get('type', '').startswith('image/'):
+                                image_url = enc.get('href', image_url)
+                                break
+                    
+                    # TẦNG 2: Nếu không thấy thẻ Media, bóc tách thẻ <img> HTML (Dành cho VnExpress, Tia Sáng...)
+                    if image_url == "https://via.placeholder.com/300x180" and soup:
                         img_tag = soup.find('img')
-                        if img_tag and img_tag.get('src'): 
-                            image_url = img_tag['src']
+                        if img_tag:
+                            # Chống Lazy loading trên Server: Ưu tiên lấy data-src, data-original trước src
+                            image_url = img_tag.get('data-src') or img_tag.get('data-original') or img_tag.get('src') or image_url
+                    
+                    # TẦNG 3: Chuẩn hóa link (Nếu link thiếu giao thức '//' hoặc link tương đối '/assets/...')
+                    if image_url and image_url != "https://via.placeholder.com/300x180":
+                        if image_url.startswith('//'):
+                            image_url = 'https:' + image_url
+                        else:
+                            # Ép buộc chuyển đổi mọi đường dẫn tương đối thành link tuyệt đối chuẩn https://
+                            image_url = urljoin(link, image_url)
                     
                     add_pending_news(title, link, image_url, pub_date)
                     count += 1
