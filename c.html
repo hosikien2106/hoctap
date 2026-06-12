@@ -435,8 +435,8 @@
                 <div class="msg bot">Mình Đã Sẵn Sàng Chỉ Chờ Bạn Thôi</div>
             </div>
             <div class="ai-footer">
-                <!-- NHÚNG TỰ ĐỘNG KEY DỰ ÁN MỚI CỦA KIÊN VÀO GIÁ TRỊ MẶC ĐỊNH -->
-                <input type="password" class="api-key-input" id="api-key" value="AQ.Ab8RN6KLsDQHzD91envUpDgcOJicz9HZ06Or_7eIPbDZ6-ACAg" placeholder="🔐 Nhập Gemini API Key tại đây...">
+                <!-- Ô nhập API Key (người dùng tự nhập) -->
+                <input type="password" class="api-key-input" id="api-key" value="" placeholder="🔐 Dán API Key của bạn vào đây (AIzaSy... hoặc AQ...)">
                 <div class="ai-input-row">
                     <button class="ai-btn" id="ai-diagnose-btn">🔍 CHẨN ĐOÁN LỖI</button>
                     <button class="ai-btn secondary" id="upload-trigger-btn">🖼️ TẢI SƠ ĐỒ MẠCH</button>
@@ -896,7 +896,7 @@
         async function callGeminiAI(contentsPayload) {
             const apiKey = document.getElementById('api-key').value.trim();
             if(!apiKey) {
-                alert("Kiên ơi! Ông cần điền Gemini API Key (Mã bắt đầu bằng AIzaSy...) vào ô màu xanh phía dưới hộp chat nhé!");
+                alert("Kiên ơi! Ông cần điền Gemini API Key vào ô màu xanh phía dưới hộp chat nhé!");
                 return null;
             }
             
