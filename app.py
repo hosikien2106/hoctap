@@ -45,12 +45,12 @@ if "user_answers" not in st.session_state: st.session_state.user_answers = {}
 st.sidebar.markdown(
     """
     <div style="text-align: center;">
-        <h2 style="margin-bottom: 0; padding-bottom: 0; font-size: 22px;">
+        <h3 style="margin-bottom: 0; padding-bottom: 0; font-size: 22px;">
             🤖 HỆ SINH THÁI TRI THỨC
-        </h2>
-        <h4 style="color: #FF4B4B; margin-top: -5px; font-weight: bold; font-size: 16px;">
+        </h3>
+        <h3 style="color: #FF4B4B; margin-top: -5px; font-weight: bold; font-size: 16px;">
             TỰ ĐỘNG HÓA
-        </h4>
+        </h3>
     </div>
     """, 
     unsafe_allow_html=True
