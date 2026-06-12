@@ -45,9 +45,9 @@ if "user_answers" not in st.session_state: st.session_state.user_answers = {}
 st.sidebar.markdown(
     """
     <div style="text-align: center;">
-        <h3 style="margin-bottom: 0; padding-bottom: 0; font-size: 22px;">
+        <h2 style="margin-bottom: 0; padding-bottom: 0; font-weight: bold; font-size: 16px;">
             🤖 HỆ SINH THÁI TRI THỨC
-        </h3>
+        </h2>
         <h3 style="color: #FF4B4B; margin-top: -5px; font-weight: bold; font-size: 16px;">
             TỰ ĐỘNG HÓA
         </h3>
@@ -59,7 +59,7 @@ menu_selected = st.sidebar.radio("Di chuyển giữa các phân hệ:", [
     "📰 Bản Tin Tự Động Hóa", 
     "📚 Trợ Lý Bài Giảng AI", 
     "🔐 Quản Trị Hệ Thống",
-    "⚙️ Phân hệ Mô phỏng (Phần 4)"
+    "⚙️ Phân hệ Mô phỏng"
 ])
 
 def safe_image(url_string, default_url="https://via.placeholder.com/300x180", width_param='stretch'):
@@ -280,7 +280,7 @@ elif menu_selected == "🔐 Quản Trị Hệ Thống":
 # -----------------------------------------------------------------
 # PHẦN 4: THÍ NGHIỆM MÔ PHỎNG (ĐÃ BỔ SUNG NHÚNG FILE HTML)
 # -----------------------------------------------------------------
-elif menu_selected == "⚙️ Phân hệ Mô phỏng (Phần 4)":
+elif menu_selected == "⚙️ Phân hệ Mô phỏng":
     st.title("⚙️ Phòng Thí Nghiệm Ảo")
     
     # Đã thêm "Mô phỏng Mạch điện (HTML)" vào danh sách thả xuống
