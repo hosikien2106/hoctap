@@ -42,7 +42,13 @@ if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "quiz_submitted" not in st.session_state: st.session_state.quiz_submitted = False
 if "user_answers" not in st.session_state: st.session_state.user_answers = {}
 
-st.sidebar.title("🤖 HỆ SINH THÁI TRI THỨC TỰ ĐỘNG HOÁ")
+st.sidebar.markdown(
+    """
+    <h2 style='margin-bottom: 0;'>🤖 HỆ SINH THÁI TRI THỨC</h2>
+    <h4 style='color: #FF4B4B; margin-top: 5px; font-weight: bold;'>TỰ ĐỘNG HÓA</h4>
+    """, 
+    unsafe_allow_html=True
+)
 menu_selected = st.sidebar.radio("Di chuyển giữa các phân hệ:", [
     "📰 Bản Tin Tự Động Hóa", 
     "📚 Trợ Lý Bài Giảng AI", 
