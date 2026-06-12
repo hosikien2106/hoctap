@@ -119,7 +119,6 @@ def generate_content(topic, level, attached_image=None):
                     time.sleep(delay)
                     delay *= 2  # Tăng gấp đôi thời gian chờ cho lần thử sau
                     continue
-            # Đổi câu báo lỗi khô khan thành lời nhắn thân thiện
             return f"⚠️ **Hệ thống Google Gemini hiện đang quá tải do nhu cầu cao (Lỗi 503).**\n\nHệ thống của chúng ta đã thử kết nối lại {max_retries} lần nhưng chưa thành công. Vui lòng đợi khoảng 1-2 phút và nhấn nút 'Bắt đầu biên soạn' một lần nữa nhé!"
 
 def text_to_speech(text):
@@ -137,27 +136,29 @@ def text_to_speech(text):
         return None
 
 def scrape_automation_news():
+    """Hàm cào dữ liệu nâng cao sử dụng Thuật toán Chấm điểm Mật độ Từ khóa (Keyword Scoring)"""
     rss_urls = [
-        "https://vnexpress.net/rss/tin-cong-nghe.rss",
-        "https://tiasang.com.vn/rss",
         "https://vnexpress.net/rss/khoa-hoc.rss",
         "https://vnexpress.net/rss/so-hoa.rss",
         "https://vnexpress.net/rss",
         "https://vnexpress.net/rss/khoa-hoc-cong-nghe.rss",
         "https://vnexpress.net/rss/tin-moi-nhat.rss",
         "https://tuoitre.vn/rss/cong-nghe.rss",
+        "https://vnexpress.net/rss/tin-cong-nghe.rss",
         "https://dantri.com.vn/rss/cong-nghe.rss",
         "https://www.wired.com/feed/rss",
+        "https://tiasang.com.vn/rss",
         "https://spectrum.ieee.org/feed/rss",
         "https://www.deepmind.com/blog/rss",
         "https://openai.com/blog/rss/",        
         "https://ai.googleblog.com/feeds/posts/default",
+        "https://www.sciencedaily.com/rss/all.xml",
         "https://techcrunch.com/feed/",
         "https://feeds.arstechnica.com/arstechnica/index",
         "https://www.technologyreview.com/feed/",
-        "https://www.sciencedaily.com/rss/all.xml"
+        "https://vietnamnet.vn/rss/khoa-hoc.rss"
     ]
-    keywords = ["tự động hóa", "automation", "robot", "scada", "plc", "ai", "iot", "điều khiển", "cảm biến", "cnc", "nhà máy"]
+    keywords = ["tự động hóa","automation","control","robot","cnc","iot","điều khiển","trí tuệ nhân tạo","artificial intelligence","chip","semiconductor","bán dẫn"]
     count = 0
     headers = {'User-Agent': 'Mozilla/5.0'}
     
@@ -166,20 +167,64 @@ def scrape_automation_news():
             response = requests.get(url, headers=headers, timeout=15)
             if response.status_code != 200: continue
             feed = feedparser.parse(response.content)
+            
             for entry in feed.entries:
                 title = entry.get('title', '')
                 link = entry.get('link', '')
                 pub_date = entry.get('published', entry.get('pubDate', ''))
+                summary_raw = entry.get('summary', '')
                 
-                if any(kw in title.lower() for kw in keywords):
+                # Làm sạch HTML để đếm từ chính xác trong phần Tóm tắt
+                summary_text = ""
+                soup = None
+                if summary_raw:
+                    soup = BeautifulSoup(summary_raw, "lxml")
+                    summary_text = soup.get_text()
+
+                # -------------------------------------------------------------
+                # 🔥 THUẬT TOÁN TÍNH ĐIỂM (KEYWORD SCORING / DENSITY)
+                # -------------------------------------------------------------
+                title_lower = title.lower()
+                summary_lower = summary_text.lower()
+                score = 0
+                
+                for kw in keywords:
+                    # Trọng số: Từ khóa ở Tiêu đề x2 điểm, ở Tóm tắt x1 điểm
+                    score += title_lower.count(kw) * 2
+                    score += summary_lower.count(kw) * 1
+                
+                # YÊU CẦU ĐẦU VÀO: Phải đạt tối thiểu 2 điểm mới được chọn làm tin tức chuyên ngành
+                # (Đạt được khi: Có 1 từ khóa ở Tiêu đề, HOẶC 2 từ khóa ở Tóm tắt)
+                if score >= 2:
                     image_url = "https://via.placeholder.com/300x180"
-                    summary = entry.get('summary', '')
-                    if summary:
-                        soup = BeautifulSoup(summary, "lxml")
+                    if soup:
                         img_tag = soup.find('img')
-                        if img_tag and img_tag.get('src'): image_url = img_tag['src']
+                        if img_tag and img_tag.get('src'): 
+                            image_url = img_tag['src']
                     
                     add_pending_news(title, link, image_url, pub_date)
                     count += 1
-        except Exception: continue
+                    
+        except Exception: 
+            continue
+            
     return count
+
+def extract_text_from_pdf(uploaded_file):
+    """
+    Hàm đọc và trích xuất toàn bộ văn bản (text) từ file PDF tải lên
+    """
+    import pypdf
+    text = ""
+    try:
+        # Đọc file PDF từ bộ nhớ đệm Streamlit
+        reader = pypdf.PdfReader(uploaded_file)
+        for page in reader.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+    except Exception as e:
+        print(f"Lỗi khi bóc tách PDF: {e}")
+        return f"Lỗi: Không thể đọc được file PDF này. Chi tiết: {str(e)}"
+    
+    return text
