@@ -42,7 +42,7 @@ if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "quiz_submitted" not in st.session_state: st.session_state.quiz_submitted = False
 if "user_answers" not in st.session_state: st.session_state.user_answers = {}
 
-st.sidebar.title("🤖 MENU HỆ THỐNG")
+st.sidebar.title("🤖 HỆ SINH THÁI TRI THỨC TỰ ĐỘNG HOÁ")
 menu_selected = st.sidebar.radio("Di chuyển giữa các phân hệ:", [
     "📰 Bản Tin Tự Động Hóa", 
     "📚 Trợ Lý Bài Giảng AI", 
@@ -80,7 +80,7 @@ if menu_selected == "📰 Bản Tin Tự Động Hóa":
                 st.markdown("<div class='news-desc'>Bản tin chuyên sâu ngành Tự động hóa mới nhất được chọn lọc tự động từ các nguồn uy tín.</div>", unsafe_allow_html=True)
                 
                 c1, c2 = st.columns(2)
-                with c1: st.markdown(f'<a href="{hot_news[2]}" target="_blank"><button style="width:100%;">🔗 Xem nguồn gốc</button></a>', unsafe_allow_html=True)
+                with c1: st.markdown(f'<a href="{hot_news[2]}" target="_blank"><button style="width:100%;">🔗 Xem nguồn</button></a>', unsafe_allow_html=True)
                 with c2:
                     if st.button("🤖 Đưa vào phòng học AI", key=f"hot_{hot_news[0]}", width='stretch'):
                         st.session_state.topic_from_news = hot_news[1]
@@ -95,7 +95,7 @@ if menu_selected == "📰 Bản Tin Tự Động Hóa":
                 with c_txt:
                     st.markdown(f"**{news[1]}**")
                     st.caption(f"📅 {news[4]} | [🔗 Nguồn]({news[2]})")
-                    if st.button("🤖 Học bài này", key=f"sub_{news[0]}"):
+                    if st.button("🤖 Đưa vào phòng học AI", key=f"sub_{news[0]}"):
                         st.session_state.topic_from_news = news[1]
                         st.success("Đã ghi nhớ!")
                 st.markdown("<hr style='margin: 10px 0;'/>", unsafe_allow_html=True)
@@ -124,7 +124,7 @@ elif menu_selected == "📚 Trợ Lý Bài Giảng AI":
         st.image(attached_image, width=200)
 
     if st.button("🚀 Bắt đầu biên soạn", type="primary", width='stretch'):
-        with st.spinner(f"Giáo sư AI đang biên soạn theo cấp độ '{cap_do}'..."):
+        with st.spinner(f"Hệ thống AI đang biên soạn theo cấp độ '{cap_do}'..."):
             combined_topic = user_input
             if extracted_doc_text: combined_topic += f"\n\n[PDF Data]:\n{extracted_doc_text}"
             
