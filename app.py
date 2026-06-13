@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import os
 import re
-from database import get_approved_news, get_pending_news, approve_news, reject_news
+from database import get_approved_news, get_pending_news, approve_news, reject_news, delete_approved_news
 from utils import generate_content, text_to_speech, extract_text_from_pdf, scrape_automation_news
 from PIL import Image
 from dotenv import load_dotenv
@@ -48,9 +48,9 @@ st.sidebar.markdown(
         <h2 style="margin-bottom: 0; padding-bottom: 0; font-weight: bold; font-size: 16px;">
             🤖 HỆ SINH THÁI TRI THỨC
         </h2>
-        <h3 style="color: #FF4B4B; margin-top: -5px; font-weight: bold; font-size: 16px;">
+        <h4 style="color: #FF4B4B; margin-top: -5px; font-weight: bold; font-size: 16px;">
             TỰ ĐỘNG HÓA
-        </h3>
+        </h4>
     </div>
     """, 
     unsafe_allow_html=True
@@ -243,47 +243,89 @@ elif menu_selected == "📚 Trợ Lý Bài Giảng AI":
 # PHẦN 3: QUẢN TRỊ
 # -----------------------------------------------------------------
 elif menu_selected == "🔐 Quản Trị Hệ Thống":
-    st.title("🔐 Bảng Điều Khiển Quản Trị")
+    st.title("🔐 Quản Trị Hệ Thống")
     st.markdown("---")
+    
     if not st.session_state.admin_logged_in:
-        with st.form("login"):
-            usr = st.text_input("Username:")
-            pwd = st.text_input("Password:", type="password")
-            if st.form_submit_button("Đăng nhập", width='stretch'):
-                if usr == "admin" and pwd == "Abc12345":
-                    st.session_state.admin_logged_in = True
-                    st.rerun()
-                else: st.error("Sai thông tin!")
+        usr = st.text_input("Tài khoản:")
+        pwd = st.text_input("Mật khẩu:", type="password")
+        if st.button("Đăng nhập"):
+            if usr == "admin" and pwd == "Abc12345":
+                st.session_state.admin_logged_in = True
+                st.rerun()
+            else:
+                st.error("Sai thông tin!")
     else:
-        c_act, c_view = st.columns([1, 2])
+        # Bố cục sau khi Admin đã đăng nhập thành công
+        c_act, col_view = st.columns([1, 2])
+        
         with c_act:
-            if st.button("🔍 Quét tin tức", type="primary", width='stretch'):
-                with st.spinner("Đang quét..."):
-                    scrape_automation_news()
+            st.subheader("🛠️ Công cụ quản trị")
+            if st.button("🔍 Quét tìm kiếm dữ liệu mới", type="primary", width='stretch'):
+                from utils import scrape_automation_news
+                with st.spinner("Đang cào dữ liệu công nghệ..."):
+                    num = scrape_automation_news()
+                    st.success(f"Tìm thấy thành công {num} bài viết mới trong hàng đợi!")
                     st.rerun()
+            
             if st.button("🚪 Đăng xuất", width='stretch'):
                 st.session_state.admin_logged_in = False
                 st.rerun()
-        with c_view:
-            st.subheader("📋 Hàng đợi phê duyệt")
-            p_list = get_pending_news()
-            for nid, title, link, img, date in p_list:
-                with st.expander(f"📰 {title}"):
-                    st.write(link)
-                    safe_image(img, width_param=150)
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        if st.button("✅ Duyệt", key=f"ok_{nid}"): approve_news(nid); st.rerun()
-                    with c2:
-                        if st.button("❌ Bỏ", key=f"no_{nid}"): reject_news(nid); st.rerun()
-
+                
+        with col_view:
+            # 🌟 Giải pháp an toàn: Chia làm 2 Tabs độc lập để tránh làm rối giao diện quản trị
+            tab_pending, tab_manage_approved = st.tabs(["📋 Hàng chờ phê duyệt (Pending)", "🗑️ Quản lý & Xóa tin đã đăng"])
+            
+            # --- TAB 1: DUYỆT TIN MỚI CÀO ---
+            with tab_pending:
+                st.subheader("📋 Danh sách chờ phê duyệt (Pending)")
+                pending_list = get_pending_news()
+                if not pending_list:
+                    st.info("Hàng chờ trống! Hãy nhấn nút quét để nạp dữ liệu.")
+                else:
+                    for news_id, title, link, image, pub_date in pending_list:
+                        with st.expander(f"📰 {title}"):
+                            st.write(f"Nguồn: {link}")
+                            safe_image(image, "https://via.placeholder.com/150", width_param=150)
+                            c1, c2 = st.columns(2)
+                            with c1:
+                                if st.button("✅ Duyệt", key=f"ok_{news_id}"):
+                                    approve_news(news_id)
+                                    st.rerun()
+                            with c2:
+                                if st.button("❌ Bỏ qua", key=f"rej_{news_id}", width='stretch'):
+                                    reject_news(news_id)
+                                    st.toast("Đã xóa khỏi hàng chờ.")
+                                    st.rerun()
+                                    
+            # --- TAB 2: QUẢN LÝ VÀ XÓA BỚT TIN CŨ ĐÃ ĐĂNG ---
+            with tab_manage_approved:
+                st.subheader("🗑️ Danh sách tin tức công khai")
+                approved_list = get_approved_news()
+                
+                if not approved_list:
+                    st.info("Hệ thống chưa có bài viết nào được phê duyệt đăng công khai.")
+                else:
+                    st.caption("💡 Mẹo: Nhấp vào tin tức cần gỡ bỏ và nhấn nút 'Xóa tin này'.")
+                    for news_id, title, link, image, pub_date in approved_list:
+                        # Gom nhóm bằng expander giúp danh sách không bị kéo dài quá mức
+                        with st.expander(f"✅ {title} ({pub_date})"):
+                            st.write(f"Đường dẫn liên kết: {link}")
+                            safe_image(image, "https://via.placeholder.com/150", width_param=150)
+                            
+                            # Nút bấm thực thi lệnh xóa
+                            if st.button("🗑️ Xóa tin này", key=f"del_{news_id}", type="secondary"):
+                                delete_approved_news(news_id)
+                                st.toast("Đã xóa bài viết khỏi Bản tin thành công!")
+                                st.rerun()
+ 
 # -----------------------------------------------------------------
-# PHẦN 4: THÍ NGHIỆM MÔ PHỎNG (ĐÃ BỔ SUNG NHÚNG FILE HTML)
+# PHẦN 4: THÍ NGHIỆM MÔ PHỎNG (ĐÃ TÍCH HỢP MÔ PHỎNG PID 3 CẤP ĐỘ HTML)
 # -----------------------------------------------------------------
 elif menu_selected == "⚙️ Phân hệ Mô phỏng":
     st.title("⚙️ Phòng Thí Nghiệm Ảo")
     
-    # Đã thêm "Mô phỏng Mạch điện (HTML)" vào danh sách thả xuống
+    # Giữ nguyên danh sách menu trực quan của bạn
     sub_sim = st.sidebar.selectbox("Chọn thiết bị:", [
         "Mô phỏng Mạch điện (HTML)", 
         "Mô phỏng CNC 2D", 
@@ -298,7 +340,6 @@ elif menu_selected == "⚙️ Phân hệ Mô phỏng":
         try:
             with open("c.html", "r", encoding="utf-8") as f:
                 html_data = f.read()
-            # Mở một iFrame có chiều cao 800px để hiển thị file web html
             components.html(html_data, height=800, scrolling=True)
         except Exception as e:
             st.error(f"⚠️ Hệ thống không tìm thấy file 'c.html'. Vui lòng đảm bảo bạn đã đặt file c.html nằm cùng chung thư mục với file app.py! Chi tiết lỗi: {e}")
@@ -312,9 +353,17 @@ elif menu_selected == "⚙️ Phân hệ Mô phỏng":
     elif sub_sim == "Mô phỏng IoT Dashboard":
         from iot_simulator import run_iot_simulator
         run_iot_simulator()
+        
     elif sub_sim == "Bộ điều khiển PID":
-        from pid_simulator import run_pid_simulator
-        run_pid_simulator()
+        # 🌟 Đã chuyển sang nhúng trực tiếp file mô phỏng HTML PID 3 cấp độ thông minh của bạn
+        try:
+            with open("Mophong_dieukhienPID_3capdoAI.html", "r", encoding="utf-8") as f:
+                pid_html_data = f.read()
+            # Cấu hình chiều cao iFrame lên 850px để hiển thị trọn vẹn biểu đồ đồ thị và thanh điều hướng cấp độ AI
+            components.html(pid_html_data, height=850, scrolling=True)
+        except Exception as e:
+            st.error(f"⚠️ Hệ thống không tìm thấy file 'Mophong_dieukhienPID_3capdoAI.html'. Vui lòng kiểm tra lại tên file đặt trong thư mục! Chi tiết lỗi: {e}")
+            
     elif sub_sim == "Hệ thống treo 1/4 xe":
         from suspension_simulator import run_suspension_simulator
         run_suspension_simulator()

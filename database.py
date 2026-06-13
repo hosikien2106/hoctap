@@ -73,5 +73,20 @@ def get_pending_news():
     conn.close()
     return rows
 
+def delete_approved_news(news_id):
+    """Xóa một tin tức đã được phê duyệt khỏi cơ sở dữ liệu dựa trên ID"""
+    import sqlite3
+    # Kết nối tới database (hãy đảm bảo tên file .db trùng với file bạn đang dùng)
+    conn = sqlite3.connect("automation_news.db") 
+    cursor = conn.cursor()
+    try:
+        # Tiến hành xóa dòng dữ liệu có ID tương ứng
+        cursor.execute("DELETE FROM news WHERE id = ?", (news_id,))
+        conn.commit()
+    except Exception as e:
+        print(f"Lỗi khi xóa tin tức: {e}")
+    finally:
+        conn.close()
+        
 # Chạy khởi tạo database ngay khi file này được import
 init_db()
