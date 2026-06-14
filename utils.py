@@ -139,26 +139,22 @@ def scrape_automation_news():
     """Hàm cào dữ liệu thông minh ứng dụng Thuật toán Chấm điểm Mật độ Từ khóa và Trích xuất Ảnh đa tầng"""
     rss_urls = [
         "https://vnexpress.net/rss/khoa-hoc.rss",
-        "https://vnexpress.net/rss/so-hoa.rss",
-        "https://vnexpress.net/rss",
-        "https://vnexpress.net/rss/khoa-hoc-cong-nghe.rss",
-        "https://vnexpress.net/rss/tin-moi-nhat.rss",
+        "https://openai.com/blog/rss/", 
+        "https://www.sciencedaily.com/rss/all.xml",
+        "https://dantri.com.vn/rss/cong-nghe.rss",
+         https://tuoitre.vn/rss/cong-nghe.rss
+         "https://techcrunch.com/feed/",
+        "https://feeds.arstechnica.com/arstechnica/index",
+        "https://tiasang.com.vn/rss",
+        "https://www.technologyreview.com/feed/",
+        "https://ai.googleblog.com/feeds/posts/default",
         "https://tuoitre.vn/rss/cong-nghe.rss",
         "https://vnexpress.net/rss/tin-cong-nghe.rss",
-        "https://dantri.com.vn/rss/cong-nghe.rss",
         "https://www.wired.com/feed/rss",
-        "https://tiasang.com.vn/rss",
         "https://spectrum.ieee.org/feed/rss",
         "https://www.deepmind.com/blog/rss",
-        "https://openai.com/blog/rss/",        
-        "https://ai.googleblog.com/feeds/posts/default",
-        "https://www.sciencedaily.com/rss/all.xml",
-        "https://techcrunch.com/feed/",
-        "https://feeds.arstechnica.com/arstechnica/index",
-        "https://www.technologyreview.com/feed/",
-        "https://vietnamnet.vn/rss/khoa-hoc.rss"
     ]
-    keywords = ["tự động hóa","automation","control","robot","cnc","iot","điều khiển","trí tuệ nhân tạo","artificial intelligence","chip","semiconductor","bán dẫn"]
+    keywords = ["tự động hóa","automation","engineering","lý thuyết mạch điện","điện tử kỹ thuật số","kỹ thuật vi xử lý","robot","cnc","iot","trí tuệ nhân tạo","artificial","intelligence","SCADA"]
 
     count = 0
     # Giả lập Header Trình duyệt PC tiêu chuẩn để tránh bị Cloudflare kiểm soát luồng Cloud IP
